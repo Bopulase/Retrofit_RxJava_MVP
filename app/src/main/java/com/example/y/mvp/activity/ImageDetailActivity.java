@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -18,7 +19,7 @@ import com.example.y.mvp.network.Api;
 import com.example.y.mvp.utils.ActivityUtils;
 import com.example.y.mvp.utils.CompetenceUtils;
 import com.example.y.mvp.utils.UIUtils;
-import com.example.y.mvp.widget.MyOnPageChangeListener;
+import com.example.y.mvp.widget.BaseActivity;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -33,15 +34,13 @@ public class ImageDetailActivity extends BaseActivity
         implements BaseView.ImageDetailView, BaseView.ToolBarItemView {
 
 
-    @SuppressWarnings("unused")
     @Bind(R.id.viewPager)
     ViewPager viewPager;
-    @SuppressWarnings("unused")
+
     @Bind(R.id.toolBar)
     Toolbar toolBar;
 
     private int id;
-    private int pos;
     private LinkedList<ImageDetailInfo> list;
     private BasePresenter.ImageDetailPresenter imageDetailPresenter;
     private BasePresenter.ToolBarItemPresenter toolBarItemPresenter;
@@ -60,7 +59,7 @@ public class ImageDetailActivity extends BaseActivity
         super.onCreate(savedInstanceState);
         toolBar.setTitle(UIUtils.getString(R.string.image_detail));
         setSupportActionBar(toolBar);
-        CompetenceUtils.Storage();
+        CompetenceUtils.storage(this);
         getBundle();
         init();
     }
@@ -80,22 +79,14 @@ public class ImageDetailActivity extends BaseActivity
         imageDetailPresenter.requestNetWork(id);
         bigImageAdapter = new ImageDetailAdapter(list);
 
-        toolBar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                toolBarItemPresenter.switchId(item.getItemId());
-                return true;
-            }
+        toolBar.setOnMenuItemClickListener(item -> {
+            toolBarItemPresenter.switchId(item.getItemId());
+            return true;
         });
 
-        viewPager.addOnPageChangeListener(new MyOnPageChangeListener() {
-            @Override
-            public void onPageSelected(int position) {
-                super.onPageSelected(position);
-                pos = position;
-            }
-        });
-
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
     }
 
 
@@ -118,27 +109,6 @@ public class ImageDetailActivity extends BaseActivity
     }
 
     @Override
-    public void hideProgress() {
-
-    }
-
-    @Override
-    public void showProgress() {
-
-    }
-
-    @Override
-    public void showFoot() {
-
-    }
-
-    @Override
-    public void hideFoot() {
-
-    }
-
-
-    @Override
     public void setData(List<ImageDetailInfo> datas) {
         if (!datas.isEmpty()) {
             list.addAll(datas);
@@ -153,9 +123,16 @@ public class ImageDetailActivity extends BaseActivity
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     public void switchShare() {
-        ActivityUtils.share(Api.IMAGER_URL + list.get(pos).getSrc());
+        ActivityUtils.share(this, TextUtils.concat(Api.IMAGER_URL, list.get(viewPager.getCurrentItem()).getSrc()));
     }
 }
